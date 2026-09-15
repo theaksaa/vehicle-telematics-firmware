@@ -1,4 +1,4 @@
-#include "gnss/gnss_service.h"
+#include "services/gnss_service.h"
 
 #include <errno.h>
 #include <string.h>

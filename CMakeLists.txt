@@ -9,8 +9,12 @@ target_include_directories(app PRIVATE include)
 target_sources(app PRIVATE
     src/main.c
 
+    src/can/can_decoder.c
+    src/can/can_service.c
+    src/can/vehicle_config.c
     src/gnss/gnss_service.c
 
     src/shell/app_shell.c
     src/shell/gps_shell.c
+    src/shell/vehicle_shell.c
 )

@@ -1,4 +1,4 @@
-#include "gnss/gnss_service.h"
+#include "services/gnss_service.h"
 
 #include <zephyr/kernel.h>
 #include <zephyr/shell/shell.h>
