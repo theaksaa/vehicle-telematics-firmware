@@ -1,6 +1,10 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
+    aliases {
+        gnss = &gps;
+    };
+
     chosen {
         zephyr,canbus = &mcp2515;
     };
