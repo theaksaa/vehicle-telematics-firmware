@@ -27,15 +27,44 @@ static int64_t last_update_ms;
 static struct gnss_satellite latest_satellites[GNSS_SERVICE_MAX_SATELLITES];
 static uint16_t latest_satellite_count;
 
+#if defined(CONFIG_TELEMATICS_SIMULATION)
+static bool simulation_enabled;
+#endif
+
+static void store_data(const struct gnss_data *data)
+{
+    latest_data = *data;
+    data_received = true;
+    last_update_ms = k_uptime_get();
+}
+
+static void store_satellites(
+    const struct gnss_satellite *satellites,
+    uint16_t count)
+{
+    latest_satellite_count = MIN(count, ARRAY_SIZE(latest_satellites));
+
+    if (latest_satellite_count > 0U) {
+        memcpy(latest_satellites, satellites,
+               latest_satellite_count * sizeof(struct gnss_satellite));
+    }
+}
+
 static void gnss_data_callback(
     const struct device *dev,
     const struct gnss_data *data)
 {
+    ARG_UNUSED(dev);
+
     k_mutex_lock(&gnss_mutex, K_FOREVER);
 
-    latest_data = *data;
-    data_received = true;
-    last_update_ms = k_uptime_get();
+#if defined(CONFIG_TELEMATICS_SIMULATION)
+    if (!simulation_enabled) {
+#endif
+        store_data(data);
+#if defined(CONFIG_TELEMATICS_SIMULATION)
+    }
+#endif
 
     k_mutex_unlock(&gnss_mutex);
 }
@@ -47,16 +76,17 @@ static void gnss_satellites_callback(
     const struct gnss_satellite *satellites,
     uint16_t size)
 {
+    ARG_UNUSED(dev);
+
     k_mutex_lock(&gnss_mutex, K_FOREVER);
 
-    latest_satellite_count =
-        MIN(size, ARRAY_SIZE(latest_satellites));
-
-    memcpy(
-        latest_satellites,
-        satellites,
-        latest_satellite_count * sizeof(struct gnss_satellite)
-    );
+#if defined(CONFIG_TELEMATICS_SIMULATION)
+    if (!simulation_enabled) {
+#endif
+        store_satellites(satellites, size);
+#if defined(CONFIG_TELEMATICS_SIMULATION)
+    }
+#endif
 
     k_mutex_unlock(&gnss_mutex);
 }
@@ -143,6 +173,71 @@ int64_t gnss_service_last_update(void)
 
     return value;
 }
+
+#if defined(CONFIG_TELEMATICS_SIMULATION)
+void gnss_service_set_simulation_enabled(bool enabled)
+{
+    k_mutex_lock(&gnss_mutex, K_FOREVER);
+
+    if (simulation_enabled != enabled) {
+        simulation_enabled = enabled;
+        data_received = false;
+        last_update_ms = 0;
+        latest_satellite_count = 0;
+    }
+
+    k_mutex_unlock(&gnss_mutex);
+}
+
+bool gnss_service_simulation_is_enabled(void)
+{
+    k_mutex_lock(&gnss_mutex, K_FOREVER);
+    bool enabled = simulation_enabled;
+    k_mutex_unlock(&gnss_mutex);
+
+    return enabled;
+}
+
+int gnss_service_inject_data(const struct gnss_data *data)
+{
+    if (data == NULL) {
+        return -EINVAL;
+    }
+
+    k_mutex_lock(&gnss_mutex, K_FOREVER);
+
+    if (!simulation_enabled) {
+        k_mutex_unlock(&gnss_mutex);
+        return -EACCES;
+    }
+
+    store_data(data);
+    k_mutex_unlock(&gnss_mutex);
+
+    return 0;
+}
+
+int gnss_service_inject_satellites(
+    const struct gnss_satellite *satellites,
+    uint16_t count)
+{
+    if (satellites == NULL && count > 0U) {
+        return -EINVAL;
+    }
+
+    k_mutex_lock(&gnss_mutex, K_FOREVER);
+
+    if (!simulation_enabled) {
+        k_mutex_unlock(&gnss_mutex);
+        return -EACCES;
+    }
+
+    store_satellites(satellites, count);
+    k_mutex_unlock(&gnss_mutex);
+
+    return 0;
+}
+#endif
 
 int gnss_service_get_awake(bool *awake)
 {

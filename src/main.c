@@ -28,8 +28,12 @@ int main(void)
         return ret;
     }
 
+#if defined(CONFIG_TELEMATICS_SIMULATION)
+    printk("WARNING: bench simulation enabled; CAN is in normal mode\n");
+    ret = can_service_start(CAN_SERVICE_MODE_NORMAL);
+#else
     ret = can_service_start(CAN_SERVICE_MODE_LISTEN_ONLY);
-    // ret = can_service_start(CAN_SERVICE_MODE_NORMAL);
+#endif
 
     if (ret != 0) {
         printk("CAN service start failed: %d\n", ret);

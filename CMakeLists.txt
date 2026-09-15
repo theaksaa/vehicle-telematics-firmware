@@ -18,3 +18,7 @@ target_sources(app PRIVATE
     src/shell/gps_shell.c
     src/shell/vehicle_shell.c
 )
+
+target_sources_ifdef(CONFIG_TELEMATICS_SIMULATION app PRIVATE
+    src/shell/simulation_shell.c
+)

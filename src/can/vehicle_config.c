@@ -1,10 +1,11 @@
 #include "services/vehicle_config.h"
 
 /*
- * Example layout for standard CAN frame 0x100:
- *   bytes 0..1: speed in 0.01 km/h
- *   bytes 2..3: engine speed in 0.25 rpm
- *   byte  4:    throttle position from 0 to 100 percent
+ * Candidate VW PQ-platform layout used by the bench simulator:
+ *   0x1A0, bits 17..31: vehicle speed in 0.01 km/h
+ *   0x280, bytes 2..3: engine speed in 0.25 rpm
+ *   0x280, byte 5: throttle position in 0.4 percent
+ * Verify these signals against captures from the target vehicle before use.
  */
 static const struct vehicle_signal_config default_signals[] = {
     {

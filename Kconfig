@@ -1,0 +1,9 @@
+config TELEMATICS_SIMULATION
+	bool "Enable telematics bench simulation"
+	depends on SHELL
+	help
+	  Enable GNSS injection through the existing shell UART and start CAN in
+	  normal mode so a two-node USB-to-CAN bench can acknowledge frames.
+	  Disable this option before connecting the device to a vehicle.
+
+source "Kconfig.zephyr"
